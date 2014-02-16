@@ -20,6 +20,8 @@ Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
 Requires(post):	systemd-units
 Requires(preun):	systemd-units
+Requires(postun):	/usr/sbin/groupdel
+Requires(postun):	/usr/sbin/userdel
 Requires(postun):	systemd-units
 Requires:	dbus
 Requires:	polkit
@@ -81,6 +83,10 @@ fi
 
 %postun
 /bin/systemctl daemon-reload >/dev/null 2>&1 || :
+if [ "$1" = "0" ]; then
+	%userremove rtkit
+	%groupremove rtkit
+fi
 
 %files
 %defattr(644,root,root,755)
