@@ -1,18 +1,23 @@
 Summary:	Realtime Policy and Watchdog Daemon
 Summary(pl.UTF-8):	Demon polityki i dozorujący dla szeregowania czasu rzeczywistego (RealTime)
 Name:		rtkit
-Version:	0.11
+Version:	0.13
 Release:	1
 Group:		Base
 # The daemon itself is GPLv3+, the reference implementation for the client BSD
 License:	GPL v3+ (daemon), BSD (client library)
-Source0:	http://0pointer.de/public/%{name}-%{version}.tar.xz
-# Source0-md5:	a96c33b9827de66033d2311f82d79a5d
-URL:		http://git.0pointer.de/?p=rtkit.git
+Source0:	https://github.com/heftig/rtkit/releases/download/v%{version}/%{name}-%{version}.tar.xz
+# Source0-md5:	90939b9886d1998fa5b15f6109bfd1ae
+URL:		https://github.com/heftig/rtkit
 BuildRequires:	dbus-devel >= 1.2
 BuildRequires:	libcap-devel
+BuildRequires:	meson >= 0.49.0
+BuildRequires:	ninja
 BuildRequires:	polkit-devel
+BuildRequires:	rpmbuild(macros) >= 1.736
+BuildRequires:	systemd-devel
 BuildRequires:	tar >= 1:1.22
+BuildRequires:	xxd
 BuildRequires:	xz
 Requires(pre):	/bin/id
 Requires(pre):	/usr/bin/getgid
@@ -47,20 +52,13 @@ rzeczywistego przez procesy zwykłych użytkowników.
 %setup -q
 
 %build
-%configure \
-	--disable-silent-rules \
-	--with-systemdsystemunitdir=%{systemdunitdir} \
-
-%{__make}
-
-./rtkit-daemon --introspect > org.freedesktop.RealtimeKit1.xml
+%meson build \
+	-Dinstalled_tests=false
+%ninja_build -C build
 
 %install
 rm -rf $RPM_BUILD_ROOT
-%{__make} install \
-	DESTDIR=$RPM_BUILD_ROOT
-
-install -Dp org.freedesktop.RealtimeKit1.xml $RPM_BUILD_ROOT%{_datadir}/dbus-1/interfaces/org.freedesktop.RealtimeKit1.xml
+%ninja_install -C build
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -91,11 +89,11 @@ fi
 %files
 %defattr(644,root,root,755)
 %doc README LICENSE rtkit.c rtkit.h
-%attr(755,root,root) %{_sbindir}/rtkitctl
+%attr(755,root,root) %{_bindir}/rtkitctl
 %attr(755,root,root) %{_libexecdir}/rtkit-daemon
 %{_datadir}/dbus-1/interfaces/org.freedesktop.RealtimeKit1.xml
 %{_datadir}/dbus-1/system-services/org.freedesktop.RealtimeKit1.service
 %{_datadir}/polkit-1/actions/org.freedesktop.RealtimeKit1.policy
-%config(noreplace) /etc/dbus-1/system.d/org.freedesktop.RealtimeKit1.conf
+%{_datadir}/dbus-1/system.d/org.freedesktop.RealtimeKit1.conf
 %{systemdunitdir}/rtkit-daemon.service
 %{_mandir}/man8/rtkitctl.8*
